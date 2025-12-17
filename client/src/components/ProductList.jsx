@@ -76,7 +76,7 @@ const ProductList = ({ cart, setCart }) => {
   return (
     <div>
       <h2>Tất Cả Sản Phẩm</h2>
-      <div style={gridStyle}>
+      <div style={flexCenter}>
         {products.map(product => (
           <div key={product._id} style={cardStyle}>
             {/* Ảnh sản phẩm (chỉ là placeholder) */}
@@ -113,6 +113,16 @@ const gridStyle = {
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
     gap: '20px' 
 };
+const flexCenter = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '20px',
+    flexWrap: 'wrap',
+    
+
+};
+
 const cardStyle = { 
     // ... giữ nguyên hoặc thêm chiều cao cố định cho card nếu cần
     border: '1px solid #ddd', 

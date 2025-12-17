@@ -1,7 +1,9 @@
 // server/index.js
 
 const express = require('express');
+// Thư viện Mongoose để kết nối và thao tác với MongoDB
 const mongoose = require('mongoose');
+// CORS Middleware để cho phép truy cập từ client
 const cors = require('cors');
 
 const app = express();
@@ -21,11 +23,23 @@ mongoose.connect(MONGODB_URI)
 
 // 2. ĐỊNH NGHĨA MODEL SẢN PHẨM
 const productSchema = new mongoose.Schema({
+  
   name: { type: String, required: true, unique: true },
+  // dữ liệu bắt buộc và tên sản phẩm phải duy nhất
+  // (Unique sẽ giúp tránh trùng tên sản phẩm)
+  // khuyen dùng _id để định danh chính
+  //  đặt tên sản phẩm có thể kèm theo id hoặc mã riêng, ví dụ như: Laptop Dell XPS 13 - 9310
   description: { type: String, required: true },
+  // mô tả sản phẩm, not thing impotain here
   price: { type: Number, required: true, min: 0 },
+  // giá sản phẩm, không được âm
+  // nếu âm sẽ báo lỗi Validation Mongoose
   stock: { type: Number, required: true, min: 0 },
+  // số lượng tồn kho, không được âm
+  // nếu âm sẽ báo lỗi Validation Mongoose
   imageUrl: { type: String, default: 'placeholder.jpg' }
+  // URL ảnh sản phẩm, có thể để mặc định
+  // hỗ trợ các định dạng ảnh phổ biến như .jpg, .png, .jpeg, .svg
 });
 
 const Product = mongoose.model('Product', productSchema);
@@ -53,6 +67,44 @@ app.post('/api/products', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+
+// server/index.js (Thêm vào phần ĐỊNH NGHĨA ROUTES)
+
+// ... (GET và POST đã có)
+
+// PUT: Cập nhật sản phẩm theo ID
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    // { new: true } trả về document sau khi cập nhật
+    // await Product là Promise nên cần await
+    // req.body chứa dữ liệu cập nhật từ client
+    // param id lấy từ URL, params là object chứa tất cả tham số động của route cụ thể là :id
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // nếu không tìm thấy sản phẩm thì trả về 404
+    if (!updatedProduct) return res.status(404).json({ message: 'Product not found' });
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error("Lỗi PUT Product:", error.message);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// DELETE: Xóa sản phẩm theo ID
+app.delete('/api/products/:id', async (req, res) => {
+  
+  try {
+    const result = await Product.findByIdAndDelete(req.params.id);
+    // nếu không tìm thấy sản phẩm thì trả về 404
+    if (!result) return res.status(404).json({ message: 'Product not found' });
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error("Lỗi DELETE Product:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ... (Phần chạy Server)
+
 
 // Chạy Server
 app.listen(PORT, () => {
