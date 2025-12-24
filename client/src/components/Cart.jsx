@@ -27,10 +27,10 @@ const Cart = ({ cart, setCart }) => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={flexCenter}>
       <h2>Giỏ Hàng Của Bạn</h2>
       {cart.length === 0 ? (
-        <p style={{ textAlign: 'center', fontSize: '1.2em', color: '#6c757d' }}>
+        <p style={{overflowX: 'auto', width: '100%'}}>
             Giỏ hàng trống. Hãy quay lại trang sản phẩm để thêm hàng!
         </p>
       ) : (
@@ -83,7 +83,7 @@ const Cart = ({ cart, setCart }) => {
 };
 
 // CSS Tối giản
-const tableStyle = { width: '100%', borderCollapse: 'collapse' };
+const tableStyle = { width: '100%', borderCollapse: 'collapse',minWidth: '600px' };
 const inputQtyStyle = { width: '60px', padding: '5px', textAlign: 'center' };
 const removeButtonStyle = { backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' };
 const totalStyle = { 
@@ -102,6 +102,13 @@ const checkoutButtonStyle = {
     border: 'none', 
     borderRadius: '5px', 
     cursor: 'pointer'
+};
+const flexCenter = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '20px',
+    flexWrap: 'wrap',
 };
 
 export default Cart;

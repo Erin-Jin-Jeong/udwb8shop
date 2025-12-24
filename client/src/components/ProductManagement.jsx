@@ -10,6 +10,16 @@ const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+
+// Hàm lấy Token từ localStorage
+  const getAuthConfig = () => {
+    const token = localStorage.getItem('token');
+    return {
+      headers: { Authorization: `Bearer ${token}` }
+    };
+  };
+
+
   // READ: Hàm lấy danh sách sản phẩm
   const fetchProducts = async () => {
     try {
@@ -27,10 +37,15 @@ const ProductManagement = () => {
   }, []);
 
   // DELETE: Hàm xóa sản phẩm
+  // Ví dụ khi xóa sản phẩm
+// const token = localStorage.getItem('token');
+// await axios.delete(`http://localhost:5000/api/products/${id}`, {
+//   headers: { Authorization: `Bearer ${token}` }
+// });
   const handleDelete = async (id, name) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm: ${name} không?`)) {
       try {
-        await axios.delete(`${API_URL}/${id}`);
+        await axios.delete(`http://localhost:5000/api/products/${id}`, getAuthConfig());
         alert(`Sản phẩm ${name} đã được xóa!`);
         // Cập nhật lại danh sách sau khi xóa thành công
         fetchProducts(); 
@@ -44,7 +59,7 @@ const ProductManagement = () => {
   if (loading) return <h3 style={{ textAlign: 'center' }}>Đang tải dữ liệu quản trị...</h3>;
 
   return (
-    <div>
+    <div style={flexCenter}>
       <div style={headerStyle}>
         <h2>Quản Lý Sản Phẩm</h2>
         {/* Link chuyển đến trang tạo sản phẩm mới */}
@@ -66,15 +81,15 @@ const ProductManagement = () => {
         <tbody>
           {products.map((product, index) => (
             <tr key={product._id}>
-              <td>{index + 1}</td>
-              <td>{product.name}</td>
+              <td >{index + 1}</td>
+              <td >{product.name}</td>
               <td style={{ textAlign: 'right' }}>{product.price.toLocaleString('vi-VN')}</td>
               <td style={{ textAlign: 'right' }}>{product.stock}</td>
-              <td>
+              <td >
                 {/* Link chuyển đến trang sửa sản phẩm (Truyền ID) */}
-                <Link to={`/admin/products/edit/${product._id}`} style={editButtonStyle}>
-                  Sửa
-                </Link>
+                <Link to={`/admin/products/edit/${product._id}`} className="btn-edit"> <button style={editButtonStyle}>Sửa</button>
+ 
+</Link>
                 {/* Nút Xóa */}
                 <button 
                   onClick={() => handleDelete(product._id, product.name)}
@@ -101,7 +116,7 @@ const createLinkStyle = {
     textDecoration: 'none',
     fontWeight: 'bold'
 };
-const tableStyle = { width: '100%', borderCollapse: 'collapse' };
+const tableStyle = { width: '100%', borderCollapse: 'collapse',minWidth: '600px' };
 const editButtonStyle = { 
     backgroundColor: '#ffc107', 
     color: 'black', 
@@ -119,6 +134,14 @@ const deleteButtonStyle = {
     padding: '5px 10px', 
     borderRadius: '4px', 
     cursor: 'pointer' 
+};
+const flexCenter = {
+    display:'inline-block',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '20px',
+    flexWrap: 'wrap',
+    paddingLeft: '20%'
 };
 
 export default ProductManagement;

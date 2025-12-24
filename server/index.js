@@ -21,6 +21,38 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ Failed to connect to MongoDB:', err));
 
+// fix24122026 login admin start
+//  user login
+// server/index.js
+
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = "CHIEU_KHOA_BAO_MAT_CUA_BAN"; // Nên để trong file .env
+
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'user' } // 'user' hoặc 'admin'
+});
+
+const User = mongoose.model('User', userSchema);
+// Định nghĩa Schema cho Admin (nếu chưa có)
+
+
+const verifyAdmin = (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(403).json({ message: "Không có token!" });
+
+  jwt.verify(token, SECRET_KEY, (err, decoded) => {
+    if (err || decoded.role !== 'admin') {
+      return res.status(401).json({ message: "Bạn không có quyền Admin!" });
+    }
+    next(); // Hợp lệ thì cho phép đi tiếp
+  });
+};
+
+
+
 // 2. ĐỊNH NGHĨA MODEL SẢN PHẨM
 const productSchema = new mongoose.Schema({
   
@@ -43,6 +75,30 @@ const productSchema = new mongoose.Schema({
 });
 
 const Product = mongoose.model('Product', productSchema);
+
+// fix19122026
+// server/index.js - Thêm vào phần PRODUCT ROUTES
+
+// Định nghĩa Schema cho Đơn hàng (nếu chưa có)
+const orderSchema = new mongoose.Schema({
+    userId: String,
+    items: Array,
+    total: Number,
+    createdAt: { type: Date, default: Date.now }
+});
+const Order = mongoose.model("Order", orderSchema);
+
+// API: Lấy danh sách tất cả đơn hàng cho Admin [cite: 72]
+app.get('/api/orders', async (req, res) => {
+    try {
+        const orders = await Order.find().sort({ createdAt: -1 }); // Mới nhất lên đầu
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+// fix19122026 e
+
 
 // 3. ĐỊNH NGHĨA ROUTES (API Endpoints)
 // GET: Lấy TẤT CẢ sản phẩm
@@ -72,39 +128,70 @@ app.post('/api/products', async (req, res) => {
 
 // ... (GET và POST đã có)
 
-// PUT: Cập nhật sản phẩm theo ID
-app.put('/api/products/:id', async (req, res) => {
+
+
+
+
+
+
+// api login admin 24122026 - start
+// Đăng ký tài khoản mới
+app.post('/api/auth/register', async (req, res) => {
   try {
-    // { new: true } trả về document sau khi cập nhật
-    // await Product là Promise nên cần await
-    // req.body chứa dữ liệu cập nhật từ client
-    // param id lấy từ URL, params là object chứa tất cả tham số động của route cụ thể là :id
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    // nếu không tìm thấy sản phẩm thì trả về 404
-    if (!updatedProduct) return res.status(404).json({ message: 'Product not found' });
-    res.json(updatedProduct);
+    const { username, password, role } = req.body;
+    // Mã hóa mật khẩu
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, password: hashedPassword, role });
+    await newUser.save();
+    res.status(201).json({ message: "Đăng ký thành công!" });
   } catch (error) {
-    console.error("Lỗi PUT Product:", error.message);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: "Tên đăng nhập đã tồn tại!" });
   }
 });
 
-// DELETE: Xóa sản phẩm theo ID
-app.delete('/api/products/:id', async (req, res) => {
-  
+// Đăng nhập
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+
+  if (user && await bcrypt.compare(password, user.password)) {
+    // Tạo Token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role }, 
+      SECRET_KEY, 
+      { expiresIn: '1h' }
+    );
+    res.json({ token, username: user.username, role: user.role });
+  } else {
+    res.status(401).json({ message: "Sai tài khoản hoặc mật khẩu!" });
+  }
+});
+// ... (Phần chạy Server)
+// server/index.js
+
+// API Xóa sản phẩm
+app.delete('/api/products/:id', verifyAdmin, async (req, res) => {
   try {
-    const result = await Product.findByIdAndDelete(req.params.id);
-    // nếu không tìm thấy sản phẩm thì trả về 404
-    if (!result) return res.status(404).json({ message: 'Product not found' });
-    res.json({ message: 'Product deleted successfully' });
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: "Xóa thành công" });
   } catch (error) {
-    console.error("Lỗi DELETE Product:", error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
-// ... (Phần chạy Server)
-
+// API Cập nhật sản phẩm
+app.put('/api/products/:id', verifyAdmin, async (req, res) => {
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true } // Trả về dữ liệu mới nhất sau khi sửa
+    );
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
 // Chạy Server
 app.listen(PORT, () => {

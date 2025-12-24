@@ -76,7 +76,7 @@ const ProductList = ({ cart, setCart }) => {
   return (
     <div>
       <h2>Tất Cả Sản Phẩm</h2>
-      <div style={flexCenter}>
+      <div style={gridStyle}>
         {products.map(product => (
           <div key={product._id} style={cardStyle}>
             {/* Ảnh sản phẩm (chỉ là placeholder) */}
@@ -108,10 +108,13 @@ const ProductList = ({ cart, setCart }) => {
 };
 
 // CSS Tối giản
-const gridStyle = { 
-    display: 'grid', 
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-    gap: '20px' 
+const gridStyle = {
+  display: 'grid',
+  // Tự động tính toán số cột dựa trên chiều rộng màn hình
+  // minmax(250px, 1fr) nghĩa là: nhỏ nhất là 250px, nếu thừa thì chia đều
+  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+  gap: '25px',
+  padding: '20px 0'
 };
 const flexCenter = {
     display: 'flex',
@@ -119,8 +122,6 @@ const flexCenter = {
     alignItems: 'center',
     gap: '20px',
     flexWrap: 'wrap',
-    
-
 };
 
 const cardStyle = { 
